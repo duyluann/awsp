@@ -9,7 +9,10 @@ Tiny cross-shell function to switch AWS profiles (with SSO auto-login if needed)
 ## Install (recommended)
 
 ```bash
+git clone https://github.com/duyluann/awsp.git
+
 make install
+
 # then restart your shell, or run:
 . "$HOME/.config/awsp/awsp.sh"
 ```
