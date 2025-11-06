@@ -1,162 +1,162 @@
-  # awsp — AWS profile switcher
+# awsp — AWS profile switcher
 
-  Tiny cross-shell function to switch AWS profiles (with SSO auto-login if needed).
+Tiny cross-shell function to switch AWS profiles (with SSO auto-login if needed).
 
-  - Works in **Bash** and **Zsh**.
-  - No `fzf` dependency — numbered picker when no profile is passed.
-  - Extras: list profiles, show current, unset env, force login, verify identity (table/json).
+- Works in **Bash** and **Zsh**.
+- No `fzf` dependency — numbered picker when no profile is passed.
+- Extras: list profiles, show current, unset env, force login, verify identity (table/json).
 
-  ## Install (recommended)
+## Install (recommended)
 
-  ```bash
-  make install
-  # then restart your shell, or run:
-  . "$HOME/.config/awsp/awsp.sh"
-  ```
+```bash
+make install
+# then restart your shell, or run:
+. "$HOME/.config/awsp/awsp.sh"
+```
 
-  This installs into `~/.config/awsp/` and adds a source line to your shell rc file.
+This installs into `~/.config/awsp/` and adds a source line to your shell rc file.
 
-  After installation, **reload your shell** or source the script manually as shown above.
+After installation, **reload your shell** or source the script manually as shown above.
 
-  ## Uninstall
+## Uninstall
 
-  ```bash
-  make uninstall
-  ```
+```bash
+make uninstall
+```
 
-  Removes all installed files and cleans up shell rc file entries.
+Removes all installed files and cleans up shell rc file entries.
 
-  ## Usage
+## Usage
 
-  ### Quick Start
+### Quick Start
 
-  Switch to a profile by name:
+Switch to a profile by name:
 
-  ```bash
-  awsp my-profile-name
-  ```
+```bash
+awsp my-profile-name
+```
 
-  Or run without arguments to get an interactive numbered picker:
+Or run without arguments to get an interactive numbered picker:
 
-  ```bash
-  awsp
-  # Pick an AWS profile:
-  #  1) dev-account
-  #  2) staging-account
-  #  3) prod-account
-  # Select number: 2
-  ```
+```bash
+awsp
+# Pick an AWS profile:
+#  1) dev-account
+#  2) staging-account
+#  3) prod-account
+# Select number: 2
+```
 
-  ### Command Reference
+### Command Reference
 
-  ```text
-  awsp [options] [PROFILE]
+```text
+awsp [options] [PROFILE]
 
-  Options:
-    -h, --help         Show help and exit
-    -l, --list         List profiles and exit
-    -c, --current      Print current AWS profile and exit
-    -u, --unset        Unset AWS profile & static creds and exit
-    -L, --login        Force "aws sso login" for the selected/current profile
-    -v, --verify       Verify identity via STS (default: auto)
-        --no-verify    Do not verify identity
-        --json         Output STS identity as JSON instead of table
-    -q, --quiet        Suppress non-essential output
-  ```
+Options:
+  -h, --help         Show help and exit
+  -l, --list         List profiles and exit
+  -c, --current      Print current AWS profile and exit
+  -u, --unset        Unset AWS profile & static creds and exit
+  -L, --login        Force "aws sso login" for the selected/current profile
+  -v, --verify       Verify identity via STS (default: auto)
+      --no-verify    Do not verify identity
+      --json         Output STS identity as JSON instead of table
+  -q, --quiet        Suppress non-essential output
+```
 
-  ### Examples
+### Examples
 
-  List all available profiles:
+List all available profiles:
 
-  ```bash
-  awsp -l
-  ```
+```bash
+awsp -l
+```
 
-  Switch to a specific profile:
+Switch to a specific profile:
 
-  ```bash
-  awsp dev-admin
-  ```
+```bash
+awsp dev-admin
+```
 
-  Force SSO login for a profile:
+Force SSO login for a profile:
 
-  ```bash
-  awsp -L prod
-  ```
+```bash
+awsp -L prod
+```
 
-  Verify identity and show in JSON format:
+Verify identity and show in JSON format:
 
-  ```bash
-  awsp -v qa --json
-  ```
+```bash
+awsp -v qa --json
+```
 
-  Show current profile:
+Show current profile:
 
-  ```bash
-  awsp -c
-  ```
+```bash
+awsp -c
+```
 
-  Unset all AWS environment variables:
+Unset all AWS environment variables:
 
-  ```bash
-  awsp -u
-  ```
+```bash
+awsp -u
+```
 
-  Quiet mode (minimal output):
+Quiet mode (minimal output):
 
-  ```bash
-  awsp -q prod
-  ```
+```bash
+awsp -q prod
+```
 
-  ### Shell Completion
+### Shell Completion
 
-  **Zsh**: Tab completion is automatically enabled after installation. Press `<TAB>` after typing `awsp` to complete profile names and options.
+**Zsh**: Tab completion is automatically enabled after installation. Press `<TAB>` after typing `awsp` to complete profile names and options.
 
-  ```bash
-  awsp <TAB>           # completes with available profile names
-  awsp -<TAB>          # completes with available options
-  ```
+```bash
+awsp <TAB>           # completes with available profile names
+awsp -<TAB>          # completes with available options
+```
 
-  **Bash**: Tab completion is automatically enabled after installation and works similarly.
+**Bash**: Tab completion is automatically enabled after installation and works similarly.
 
-  ### Troubleshooting
+### Troubleshooting
 
-  **Completion not working?**
+**Completion not working?**
 
-  For Zsh, verify the completion function is loaded:
+For Zsh, verify the completion function is loaded:
 
-  ```bash
-  type _awsp
-  # Should output: _awsp is a shell function from /home/user/.config/awsp/completions/_awsp
-  ```
+```bash
+type _awsp
+# Should output: _awsp is a shell function from /home/user/.config/awsp/completions/_awsp
+```
 
-  If completion still doesn't work:
+If completion still doesn't work:
 
-  1. Make sure you've reloaded your shell after installation
-  2. Try sourcing the script manually: `. "$HOME/.config/awsp/awsp.sh"`
-  3. Check that the completions directory is in your fpath: `echo $fpath | grep awsp`
+1. Make sure you've reloaded your shell after installation
+2. Try sourcing the script manually: `. "$HOME/.config/awsp/awsp.sh"`
+3. Check that the completions directory is in your fpath: `echo $fpath | grep awsp`
 
-  **No profiles found?**
+**No profiles found?**
 
-  Make sure you have at least one AWS profile configured:
+Make sure you have at least one AWS profile configured:
 
-  ```bash
-  aws configure sso
-  # or manually edit ~/.aws/config and ~/.aws/credentials
-  ```
+```bash
+aws configure sso
+# or manually edit ~/.aws/config and ~/.aws/credentials
+```
 
-  ## Requirements
+## Requirements
 
-  - AWS CLI v2 (recommended, but will work without it for basic profile switching)
-  - At least one SSO profile configured: `aws configure sso`
+- AWS CLI v2 (recommended, but will work without it for basic profile switching)
+- At least one SSO profile configured: `aws configure sso`
 
-  ## How It Works
+## How It Works
 
-  1. **Profile Discovery**: Reads profiles from `aws configure list-profiles` or parses `~/.aws/config` and `~/.aws/credentials`
-  2. **Environment Setup**: Exports `AWS_PROFILE` and `AWS_DEFAULT_PROFILE`, clears static credentials
-  3. **SSO Auto-Login**: Automatically runs `aws sso login` if credentials are expired (when AWS CLI is available)
-  4. **Identity Verification**: Optionally verifies your identity via `aws sts get-caller-identity`
+1. **Profile Discovery**: Reads profiles from `aws configure list-profiles` or parses `~/.aws/config` and `~/.aws/credentials`
+2. **Environment Setup**: Exports `AWS_PROFILE` and `AWS_DEFAULT_PROFILE`, clears static credentials
+3. **SSO Auto-Login**: Automatically runs `aws sso login` if credentials are expired (when AWS CLI is available)
+4. **Identity Verification**: Optionally verifies your identity via `aws sts get-caller-identity`
 
-  ## License
+## License
 
-  This repository is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
+This repository is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
