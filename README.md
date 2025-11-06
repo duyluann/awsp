@@ -1,110 +1,199 @@
-# 🛠️ GitHub Repo Template
+# awsp — AWS profile switcher
 
-Welcome to the Template Repository on GitHub! This repository is designed to serve as a starting point for creating new Git repositories with best practices and configurations already set up. Below is a brief overview of the structure and the purpose of each file and directory in this repository.
+Tiny cross-shell function to switch AWS profiles (with SSO auto-login if needed).
 
-## 📁 Repository Structure
+- Works in **Bash** and **Zsh**.
+- No `fzf` dependency — numbered picker when no profile is passed.
+- Extras: list profiles, show current, unset env, force login, verify identity (table/json).
+
+## Install (recommended)
+
+```bash
+make install
+# then restart your shell, or run:
+. "$HOME/.config/awsp/awsp.sh"
+```
+
+This installs into `~/.config/awsp/` and adds a source line to your shell rc file.
+
+After installation, **reload your shell** or source the script manually as shown above.
+
+## Uninstall
+
+```bash
+make uninstall
+```
+
+Removes all installed files and cleans up shell rc file entries.
+
+## Usage
+
+### Quick Start
+
+Switch to a profile by name:
+
+```bash
+awsp my-profile-name
+```
+
+Or run without arguments to get an interactive numbered picker:
+
+```bash
+awsp
+# Pick an AWS profile:
+#  1) dev-account
+#  2) staging-account
+#  3) prod-account
+# Select number: 2
+```
+
+### Command Reference
 
 ```text
-.
-├── .editorconfig                       # 🖊️ Configuration for consistent coding styles
-├── .github                             # 🛠️ GitHub-specific configurations
-│   ├── ISSUE_TEMPLATE                  # 📝 GitHub issue template
-│   │   └── issue_template.md           # 📝 Issue template file
-│   ├── dependabot.yml                  # 🤖 Dependabot configuration
-│   ├── pull_request_template.md        # 📝 Pull request template
-│   └── workflows                       # ⚙️ GitHub Actions workflows
-│       ├── deps-review.yaml            # 📋 Dependency review workflow
-│       ├── gitleaks.yaml               # 🔒 Secret scanning workflow
-│       ├── lint-pr.yaml                # 🧹 Linting workflow for pull requests
-│       ├── pre-commit-auto-update.yaml # 🔄 Pre-commit hook auto-update workflow
-│       ├── release.yaml                # 🚀 Release workflow
-│       ├── stale.yaml                  # ⏳ Stale issue management workflow
-│       └── template-repo-sync.yaml     # 🔄 Template repository sync workflow
-├── .gitignore                          # 🚫 Files and directories to be ignored by Git
-├── .pre-commit-config.yaml             # 🛠️ Pre-commit hooks configuration
-├── .releaserc.json                     # 🚀 Semantic release configuration
-├── .gitleaks.toml                      # 🔒 Gitleaks secret scanning configuration
-├── .vscode                             # 🖥️ VSCode-specific configurations
-│   └── extensions.json                 # 🛠️ Recommended extensions for VSCode
-├── CHANGELOG.md                        # 📝 Change log of the project
-├── CODEOWNERS                          # 👥 Defines the code owners for the repository
-├── LICENSE                             # ⚖️ License for the project
-└── README.md                           # 📖 Project documentation (this file)
-```
-## ⚙️ Semantic Commit Messages
-This project uses [Semantic Commit Messages](https://www.conventionalcommits.org/) to ensure meaningful and consistent commit history. The format is as follows:
+awsp [options] [PROFILE]
 
-```php
-<type>(<scope>): <subject>
+Options:
+  -h, --help         Show help and exit
+  -l, --list         List profiles and exit
+  -c, --current      Print current AWS profile and exit
+  -u, --unset        Unset AWS profile & static creds and exit
+  -L, --login        Force "aws sso login" for the selected/current profile
+  -v, --verify       Verify identity via STS (default: auto)
+      --no-verify    Do not verify identity
+      --json         Output STS identity as JSON instead of table
+  -q, --quiet        Suppress non-essential output
 ```
 
-### Types
+### Examples
 
-- `feat`: A new feature (e.g., `feat: add login functionality`).
-- `fix`: A bug fix (e.g., `fix: resolve login button issue`).
-- `docs`: Documentation changes (e.g., `docs: update API documentation`).
-- `style`: Code style changes (formatting, missing semi-colons, etc.) without changing logic (e.g., `style: fix indentation`).
-- `refactor`: Code changes that neither fix a bug nor add a feature (e.g., `refactor: update user controller structure`).
-- `test`: Adding or updating tests (e.g., `test: add unit tests for login service`).
-- `chore`: Changes to build process, auxiliary tools, or libraries (e.g., `chore: update dependencies`).
-
-### Scope
-
-Optional: The part of the codebase affected by the change (e.g., `feat(auth): add OAuth support`)
-
-### Subject
-
-A brief description of the change, using the imperative mood (e.g., `fix: resolve issue with user authentication`).
-
-## 🔒 Secret Scanning with Gitleaks
-
-This project uses [Gitleaks](https://github.com/gitleaks/gitleaks) to detect secrets and sensitive information in the codebase. Gitleaks is configured to run both locally via pre-commit hooks and in CI/CD pipelines.
-
-### Local Development
-
-Gitleaks runs automatically as a pre-commit hook. To install the pre-commit hooks:
+List all available profiles:
 
 ```bash
-pre-commit install
+awsp -l
 ```
 
-To run Gitleaks manually:
+Switch to a specific profile:
 
 ```bash
-pre-commit run gitleaks --all-files
+awsp dev-admin
 ```
 
-### CI/CD Integration
+Force SSO login for a profile:
 
-Gitleaks runs automatically on:
-- Pull requests to main/master branch
-- Pushes to main/master branch
+```bash
+awsp -L prod
+```
 
-The workflow will fail if any secrets are detected, helping prevent accidental exposure of sensitive information.
+Verify identity and show in JSON format:
 
-### Configuration
+```bash
+awsp -v qa --json
+```
 
-The `.gitleaks.toml` file contains:
-- Allowlist patterns for false positives
-- Custom scanning rules
-- Output configuration
+Show current profile:
 
-## 🚀 Semantic Release
+```bash
+awsp -c
+```
 
-### How It Works
+Unset all AWS environment variables:
 
-1. Analyze commits: Semantic Release inspects commit messages to determine the type of changes in the codebase.
-2. Generate release version: Based on the commit type, it will automatically bump the version following semantic versioning:
-- fix → Patch release (e.g., 1.0.1)
-- feat → Minor release (e.g., 1.1.0)
-- BREAKING CHANGE → Major release (e.g., 2.0.0)
-3. Create release notes: It generates a changelog from the commit messages and includes it in the release.
-4. Publish: It automatically publishes the new version to the repository (and any other configured registries, e.g., npm).
+```bash
+awsp -u
+```
 
-## 🤝 Contributing
+Quiet mode (minimal output):
 
-If you find any issues or have suggestions for improving this template repository, please feel free to open an issue or submit a pull request. Contributions are always welcome!
+```bash
+awsp -q prod
+```
 
-## 📜 License
+### Shell Completion
+
+**Zsh**: Tab completion is automatically enabled after installation. Press `<TAB>` after typing `awsp` to complete profile names and options.
+
+```bash
+awsp <TAB>           # completes with available profile names
+awsp -<TAB>          # completes with available options
+```
+
+**Bash**: Tab completion is automatically enabled after installation and works similarly.
+
+### Troubleshooting
+
+**Completion not working?**
+
+For Zsh, verify the completion function is loaded:
+
+```bash
+type _awsp
+# Should output: _awsp is a shell function from /home/user/.config/awsp/completions/_awsp
+```
+
+If completion still doesn't work:
+
+1. Make sure you've reloaded your shell after installation
+2. Try sourcing the script manually: `. "$HOME/.config/awsp/awsp.sh"`
+3. Check that the completions directory is in your fpath: `echo $fpath | grep awsp`
+
+**No profiles found?**
+
+Make sure you have at least one AWS profile configured:
+
+```bash
+aws configure sso
+# or manually edit ~/.aws/config and ~/.aws/credentials
+```
+
+## Requirements
+
+- AWS CLI v2 (recommended, but will work without it for basic profile switching)
+- At least one SSO profile configured: `aws configure sso`
+
+## How It Works
+
+1. **Profile Discovery**: Reads profiles from `aws configure list-profiles` or parses `~/.aws/config` and `~/.aws/credentials`
+2. **Environment Setup**: Exports `AWS_PROFILE` and `AWS_DEFAULT_PROFILE`, clears static credentials
+3. **SSO Auto-Login**: Automatically runs `aws sso login` if credentials are expired (when AWS CLI is available)
+4. **Identity Verification**: Optionally verifies your identity via `aws sts get-caller-identity`
+
+## Sequence Diagram(s)
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant awsp as awsp function
+    participant AWS as AWS CLI
+    participant Config as Shell RC Files
+    
+    User->>awsp: awsp [profile]
+    alt --current flag
+        awsp->>User: Print current AWS_PROFILE
+    else --unset flag
+        awsp->>Config: Unset credentials
+        awsp->>User: Credentials cleared
+    else --list flag
+        awsp->>AWS: List profiles
+        AWS->>awsp: Profile list
+        awsp->>User: Print profiles
+    else Profile selection
+        awsp->>AWS: Query available profiles
+        AWS->>awsp: Profile list
+        awsp->>User: Interactive selection menu
+        User->>awsp: Select profile
+        awsp->>Config: Set AWS_PROFILE env
+        alt --login flag
+            awsp->>AWS: SSO login
+            AWS->>awsp: Login complete
+        end
+        alt --verify flag
+            awsp->>AWS: sts get-caller-identity
+            AWS->>awsp: Identity info
+            awsp->>User: Display identity (table or JSON)
+        end
+    end
+```
+
+## License
 
 This repository is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
