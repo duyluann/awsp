@@ -157,6 +157,43 @@ aws configure sso
 3. **SSO Auto-Login**: Automatically runs `aws sso login` if credentials are expired (when AWS CLI is available)
 4. **Identity Verification**: Optionally verifies your identity via `aws sts get-caller-identity`
 
+## Sequence Diagram(s)
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant awsp as awsp function
+    participant AWS as AWS CLI
+    participant Config as Shell RC Files
+    
+    User->>awsp: awsp [profile]
+    alt --current flag
+        awsp->>User: Print current AWS_PROFILE
+    else --unset flag
+        awsp->>Config: Unset credentials
+        awsp->>User: Credentials cleared
+    else --list flag
+        awsp->>AWS: List profiles
+        AWS->>awsp: Profile list
+        awsp->>User: Print profiles
+    else Profile selection
+        awsp->>AWS: Query available profiles
+        AWS->>awsp: Profile list
+        awsp->>User: Interactive selection menu
+        User->>awsp: Select profile
+        awsp->>Config: Set AWS_PROFILE env
+        alt --login flag
+            awsp->>AWS: SSO login
+            AWS->>awsp: Login complete
+        end
+        alt --verify flag
+            awsp->>AWS: sts get-caller-identity
+            AWS->>awsp: Identity info
+            awsp->>User: Display identity (table or JSON)
+        end
+    end
+```
+
 ## License
 
 This repository is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
