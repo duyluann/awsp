@@ -2,203 +2,163 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## Repository Purpose
 
-`awsp` is a lightweight, cross-shell AWS profile switcher with SSO auto-login support. It's implemented as a pure POSIX shell function (not a binary) and works in both Bash and Zsh without external dependencies like `fzf`.
-
-## Core Architecture
-
-### Single-Function Design
-
-The entire application is a single shell function defined in `bin/awsp.sh`. This function:
-- Must be **sourced** (not executed) to modify the parent shell's environment variables
-- Uses POSIX-compliant shell scripting for maximum portability
-- Employs `emulate -L sh` for Zsh to ensure POSIX behavior
-
-### Key Components
-
-1. **Main Function** (`bin/awsp.sh`):
-   - Parses command-line arguments and flags
-   - Discovers AWS profiles from AWS CLI or by parsing config files
-   - Sets environment variables (`AWS_PROFILE`, `AWS_DEFAULT_PROFILE`)
-   - Handles SSO authentication via `aws sso login`
-   - Verifies identity using `aws sts get-caller-identity`
-
-2. **Shell Completions**:
-   - `completions/_awsp.zsh`: Zsh completion using `_arguments`
-   - `completions/awsp.bash`: Bash completion using `complete -F`
-   - Both dynamically fetch profile names from AWS CLI
-
-3. **Installation** (`Makefile`):
-   - Installs to `~/.config/awsp/` (configurable via `PREFIX`)
-   - Modifies shell RC files to source the function
-   - `uninstall` target removes ALL traces including RC file modifications
+This is a GitHub repository template providing standardized starting point for new projects with pre-configured best practices, automated workflows, and tooling.
 
 ## Development Workflow
 
-### Branch Strategy
+**CRITICAL:** Never commit directly to the `main` branch.
 
-**Always create a feature branch for new work - never commit directly to `main`.**
+**Always create a feature branch:**
 
 ```bash
-# Create and switch to a feature branch
-git checkout -b feature/your-feature-name
-
-# After making changes, push and create a PR
-git push -u origin feature/your-feature-name
+git checkout -b feat/your-feature-name
+# OR
+git checkout -b fix/bug-description
+# OR
+git checkout -b docs/documentation-update
 ```
 
-The `main` branch is protected and triggers automated releases via semantic-release on merge.
+After implementing changes, create a pull request for review. The main branch is protected and requires:
+
+- PR review and approval
+- All CI checks passing (lint, tests, security scans)
+- Conventional Commits format for PR title
+
+## Commit Message Convention
+
+**CRITICAL:** All commits and PR titles MUST follow Conventional Commits format:
+
+```
+<type>(<scope>): <subject>
+```
+
+**Allowed Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `ci`, `revert`
+
+**Validation Rules (enforced by CI):**
+
+- Subject must start with alphabetic character
+- Scope is optional
+- Use imperative mood ("add feature" not "added feature")
+- PR titles are automatically validated with sticky comments on errors
 
 ## Development Commands
 
-### Testing Installation Locally
+**Install pre-commit hooks (required before first commit):**
 
 ```bash
-# Install to default location (~/.config/awsp)
-make install
-
-# Test the function (requires reloading shell or sourcing)
-. ~/.config/awsp/awsp.sh
-awsp --help
-```
-
-### Uninstall
-
-```bash
-make uninstall
-```
-
-### Testing Without Installation
-
-```bash
-# Source the main script directly
-. bin/awsp.sh
-
-# Test the function
-awsp --list
-```
-
-### Linting and Pre-commit
-
-```bash
-# Run pre-commit hooks manually
-pre-commit run --all-files
-
-# Install pre-commit hooks
 pre-commit install
 ```
 
-Pre-commit checks include:
-- Trailing whitespace removal
-- End-of-file fixing
-- YAML validation
-- Gitleaks secret scanning
+**Run all hooks manually:**
 
-### Release Process
-
-This project uses semantic-release for automated versioning:
-- Follows Conventional Commits specification
-- Releases are triggered automatically on push to `main`
-- CHANGELOG.md is auto-generated
-- See `.releaserc.json` for configuration
-
-## Code Architecture Details
-
-### Profile Discovery Logic
-
-The function attempts profile discovery in this order:
-1. Use `aws configure list-profiles` if AWS CLI is available
-2. Fallback to parsing `~/.aws/config` for `[profile name]` entries
-3. Parse `~/.aws/credentials` for `[name]` entries
-4. Combine and deduplicate results
-
-### Environment Variable Management
-
-The function explicitly unsets static credentials to prevent conflicts:
-```sh
-unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+```bash
+pre-commit run --all-files
 ```
 
-Then sets profile-based variables:
-```sh
-export AWS_SDK_LOAD_CONFIG=1
-export AWS_PROFILE="$profile"
-export AWS_DEFAULT_PROFILE="$profile"
+**Run specific hook:**
+
+```bash
+pre-commit run gitleaks --all-files
 ```
 
-### SSO Authentication Flow
+**Active Hooks:**
 
-1. **Auto-detection**: If `aws sts get-caller-identity` fails, assume credentials are expired
-2. **Auto-login**: Run `aws sso login --profile $PROFILE` to refresh
-3. **Verification**: Re-run `get-caller-identity` to confirm success
-4. **Force login**: `-L` flag bypasses detection and always runs SSO login
+- **Basic**: trailing-whitespace, end-of-file-fixer, check-yaml, check-json, check-toml
+- **Security**: gitleaks (--verbose), detect-private-key, check-added-large-files (max 1MB)
+- **Quality**: check-merge-conflict, check-case-conflict, mixed-line-ending (fix to LF)
+- **Linting**: markdownlint (auto-fix), yamllint (strict mode)
 
-### Verify Flag Behavior
+## Secret Scanning (Gitleaks)
 
-- `auto` (default): Verify and auto-login if needed
-- `on` (`-v`): Always verify identity
-- `off` (`--no-verify`): Skip verification entirely
+**Runs:** Pre-commit hook + CI on PRs/pushes to main/master
 
-## Shell Compatibility Notes
+**Allowlisted (`.gitleaks.toml`):**
 
-### POSIX Compliance
+- Documentation files: `*.md`, `*.txt`, `*.rst`, `LICENSE`, `CHANGELOG.md`
+- Example secrets in docs (e.g., `AKIA[0-9A-Z]{16}`, `ghp_[0-9a-zA-Z]{36}`, test passwords)
 
-The code is intentionally POSIX-compliant to work across shells:
-- Avoids bashisms like `[[ ]]`, `==`, `(( ))` arithmetic
-- Uses `[ ]` for conditionals
-- Uses portable `awk`, `sed`, `grep` patterns
+**Add custom rules:** Edit `[[rules]]` section in `.gitleaks.toml`
 
-### Zsh Emulation
+## Automated Releases
 
-For Zsh users, the function uses:
-```sh
-[ -n "${ZSH_VERSION-}" ] && emulate -L sh
-```
-This ensures POSIX-like behavior for word splitting and glob expansion.
+**Trigger:** Pushes to main branch (or manual workflow_dispatch)
 
-## Completion System Integration
+**Version Bumping:**
 
-### Zsh Completions
+- `fix` → Patch (1.0.x)
+- `feat` → Minor (1.x.0)
+- `BREAKING CHANGE` in body → Major (x.0.0)
 
-- Installed to `~/.config/awsp/completions/_awsp`
-- Added to `fpath` before `compinit`
-- Registered with `compdef _awsp awsp`
+**Process:** Analyzes commits → Bumps version → Updates CHANGELOG.md → Creates GitHub release → Commits changelog with `chore(release): version X.Y.Z [skip ci]`
 
-### Bash Completions
+**Config:** `.releaserc.json` (branches: main/master, plugins: commit-analyzer, release-notes-generator, github, changelog, git)
 
-- Installed to `~/.config/awsp/completions/awsp.bash`
-- Sourced directly from `bin/awsp.sh`
-- Uses `complete -F _awsp_complete awsp`
+## CI/CD Workflows
 
-## Important Constraints
+**On PRs:**
 
-1. **Never execute `bin/awsp.sh` directly** - it must be sourced to modify the parent shell's environment
-2. **RC file modifications are automatic** - the Makefile handles adding source lines to common RC files
-3. **No external dependencies** - the function works with just shell builtins and common UNIX tools
-4. **AWS CLI is optional** - basic profile switching works without it, but SSO features require AWS CLI v2
+- `lint-pr.yaml` - Validates PR titles (Conventional Commits format, adds sticky comment on errors)
+- `deps-review.yaml` - Reviews dependency changes
+- `gitleaks.yaml` - Scans for secrets
+- `codeql.yaml` - CodeQL security analysis (JavaScript, Python)
 
-## Testing Strategy
+**On main branch:**
 
-Since this is a shell function, testing should focus on:
+- `release.yaml` - Automated semantic-release (also manual via workflow_dispatch)
+- `codeql.yaml` - Weekly scheduled security scans (Mondays at 00:00 UTC)
 
-1. **Manual testing** in both Bash and Zsh
-2. **Profile discovery** with/without AWS CLI available
-3. **SSO login flow** with expired credentials
-4. **Completion functionality** in both shells
-5. **RC file modification** during install/uninstall
+**Automated Maintenance:**
 
-## File Structure
+- `pre-commit-auto-update.yaml` - Updates hooks
+- `stale.yaml` - Manages stale issues/PRs
+- `template-repo-sync.yaml` - Syncs template updates
+- `automerge.yaml` - Auto-merges PRs from dependabot and GitHub Actions bot
+- Dependabot - Daily GitHub Actions dependency updates with `chore(deps):` commits
 
-```
-.
-├── bin/
-│   └── awsp.sh          # Main shell function (178 lines)
-├── completions/
-│   ├── _awsp.zsh        # Zsh completion (28 lines)
-│   └── awsp.bash        # Bash completion (17 lines)
-├── Makefile             # Installation/uninstallation
-├── .pre-commit-config.yaml
-├── .releaserc.json      # Semantic release config
-└── README.md
-```
+## Template Sync
+
+When syncing template updates, files listed in `.templatesyncignore` are preserved (issue templates, VSCode config, pre-commit config, EditorConfig, CHANGELOG, CODEOWNERS, LICENSE, README, this file).
+
+## Code Style
+
+**EditorConfig:**
+
+- Indent: 2 spaces
+- Charset: UTF-8
+- Line endings: LF
+- Trim trailing whitespace (except `.diff`, `.md`)
+- Insert final newline
+
+**VSCode Settings:**
+
+- Format on save enabled (Prettier)
+- Auto-fix on save
+- Git auto-fetch enabled
+- Excluded from search: node_modules, build, dist, venv, pycache, coverage
+
+**Git Attributes:**
+
+- Auto-detect text files with LF line endings
+- Language-specific diff drivers (markdown, JSON, YAML, Python, JavaScript)
+- Binary file handling for images, archives, fonts
+
+## Project Files
+
+**Security & Contributing:**
+
+- `SECURITY.md` - Vulnerability disclosure process and security measures
+- `CONTRIBUTING.md` - Contribution guidelines, workflow, and code style
+
+**Issue Templates:**
+
+- Bug Report (`bug_report.md`)
+- Feature Request (`feature_request.md`)
+- Documentation Issue (`documentation.md`)
+- Template config (`config.yml`) - Links to discussions and security advisories
+
+**Configuration:**
+
+- `.gitattributes` - Line ending and diff behavior
+- `.gitignore` - Comprehensive ignore patterns for Python, Node.js, IDEs, OS files
