@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.2.0](https://github.com/duyluann/awsp/compare/v1.1.0...v1.2.0) (2025-12-29)
+
+
+### Bug Fixes
+
+* add @semantic-release/exec plugin to release workflow ([53e817c](https://github.com/duyluann/awsp/commit/53e817c40226f6c5f2c66f43b0028717b1a39578))
+
+
+### Features
+
+* add self-upgrade capability with smart installation detection ([#24](https://github.com/duyluann/awsp/issues/24)) ([eb1b438](https://github.com/duyluann/awsp/commit/eb1b438c65f8c0165299342a0f4f78666f8a8870))
+
 # [1.1.0](https://github.com/duyluann/awsp/compare/v1.0.0...v1.1.0) (2025-12-29)
 
 
