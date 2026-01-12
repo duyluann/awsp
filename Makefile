@@ -19,6 +19,12 @@ SRC_LINE := [ -f "$(PREFIX)/awsp.sh" ] && . "$(PREFIX)/awsp.sh"
 .PHONY: install uninstall
 
 install:
+	@if ! command -v aws >/dev/null 2>&1; then \
+		echo "⚠ WARNING: AWS CLI not found in PATH"; \
+		echo "  Basic profile switching will work, but SSO features require AWS CLI v2."; \
+		echo "  Install from: https://aws.amazon.com/cli/"; \
+		echo ""; \
+	fi
 	@mkdir -p "$(PREFIX)/completions"
 	@cp -f bin/awsp.sh "$(PREFIX)/awsp.sh"
 	@cp -f completions/awsp.bash "$(PREFIX)/completions/awsp.bash"
