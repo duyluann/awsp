@@ -177,40 +177,90 @@ aws configure sso
 
 ## Sequence Diagram(s)
 
+### Complete Profile Switching Flow
+
 ```mermaid
 sequenceDiagram
     actor User
     participant awsp as awsp function
-    participant AWS as AWS CLI
-    participant Config as Shell RC Files
+    participant AwsConfig as ~/.aws/config
+    participant AwsCreds as ~/.aws/credentials
+    participant Storage as ~/.config/awsp/
+    participant AWS as AWS CLI/STS
 
     User->>awsp: awsp [profile]
-    alt --current flag
-        awsp->>User: Print current AWS_PROFILE
-    else --unset flag
-        awsp->>Config: Unset credentials
-        awsp->>User: Credentials cleared
-    else --list flag
-        awsp->>AWS: List profiles
+
+    Note over awsp: Phase 1: Profile Selection
+    alt No profile provided
+        awsp->>AWS: aws configure list-profiles
         AWS->>awsp: Profile list
-        awsp->>User: Print profiles
-    else Profile selection
-        awsp->>AWS: Query available profiles
-        AWS->>awsp: Profile list
-        awsp->>User: Interactive selection menu
-        User->>awsp: Select profile
-        awsp->>Config: Set AWS_PROFILE env
-        alt --login flag
-            awsp->>AWS: SSO login
-            AWS->>awsp: Login complete
-        end
-        alt --verify flag
-            awsp->>AWS: sts get-caller-identity
-            AWS->>awsp: Identity info
-            awsp->>User: Display identity (table or JSON)
+        awsp->>User: Show numbered picker
+        User->>awsp: Select profile number
+    else Profile name provided
+        Note over awsp: Use provided profile name
+    end
+
+    Note over awsp: Phase 2: Environment Setup
+    awsp->>awsp: Unset AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN
+    awsp->>awsp: Unset AWS_PROFILE, AWS_DEFAULT_PROFILE
+    awsp->>awsp: Export AWS_SDK_LOAD_CONFIG=1
+    awsp->>awsp: Export AWS_PROFILE, AWS_DEFAULT_PROFILE
+    awsp->>User: → Switched to [profile]
+
+    Note over awsp,AwsConfig: Phase 3: SSO Detection
+    awsp->>AwsConfig: Read profile config
+    AwsConfig->>awsp: Profile settings
+    awsp->>awsp: Check for SSO keys (sso_start_url, etc.)
+
+    alt Profile is SSO-based
+        Note over awsp,AwsCreds: Phase 4: Static Credential Management
+        awsp->>AwsCreds: Check for static credentials
+        alt Static credentials found
+            awsp->>AwsCreds: Create backup
+            awsp->>AwsCreds: Comment out static credentials
+            awsp->>User: → Disabled static credentials (backup created)
         end
     end
+
+    Note over awsp,Storage: Phase 5: Profile Persistence
+    awsp->>Storage: Save profile to current_profile
+    Note over Storage: Enables auto-load on next shell startup
+
+    Note over awsp,AWS: Phase 6: Authentication & Verification
+    alt Force login (-L flag)
+        awsp->>User: Authenticating SSO...
+        awsp->>AWS: aws sso login --profile [profile]
+        AWS->>awsp: Login complete
+    end
+
+    alt Verify mode: on (-v) or auto (default)
+        awsp->>AWS: aws sts get-caller-identity
+        alt Credentials valid
+            AWS->>awsp: Identity info
+        else Credentials expired (auto mode only)
+            awsp->>User: Authenticating SSO...
+            awsp->>AWS: aws sso login --profile [profile]
+            AWS->>awsp: Login complete
+            awsp->>AWS: aws sts get-caller-identity (retry)
+            AWS->>awsp: Identity info
+        end
+        alt --json flag
+            awsp->>User: Display identity (JSON)
+        else Default
+            awsp->>User: Display identity (table)
+        end
+    else Verify mode: off (--no-verify)
+        Note over awsp: Skip verification
+    end
 ```
+
+### Quick Actions Flow
+
+For reference, quick actions (--list, --current, --unset) bypass the full flow:
+
+- `awsp --list`: Lists all profiles from AWS CLI or config files
+- `awsp --current`: Prints current AWS_PROFILE value
+- `awsp --unset`: Unsets all AWS environment variables and removes saved profile
 
 ## License
 
