@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.4.0](https://github.com/duyluann/awsp/compare/v1.3.0...v1.4.0) (2026-01-12)
+
+
+### Features
+
+* add AWS CLI check during installation ([a9c35d4](https://github.com/duyluann/awsp/commit/a9c35d47101ec9bf12f76de5493f1ae4c48dc6ea))
+
 # [1.3.0](https://github.com/duyluann/awsp/compare/v1.2.1...v1.3.0) (2026-01-10)
 
 
