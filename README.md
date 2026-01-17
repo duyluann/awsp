@@ -1,3 +1,7 @@
+> [!IMPORTANT]
+> **This repository has been moved to [ops4life/awsp](https://github.com/ops4life/awsp).**
+> This repo is now archived. Please visit the new location for the latest updates and contributions.
+
 <p align="center">
   <img src="awsp.png" alt="awsp - AWS profile switcher" width="200" />
 </p>
